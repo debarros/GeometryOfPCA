@@ -3,22 +3,9 @@
 #Clear the environment, load libraries and functions ####
 rm(list = ls())
 gc()
-library(ggplot2)
-library(grid)
 
-addKeyPoints = function(x){
-  pts = data.frame(x = c(0,0,1), y = c(0,1,0))
-  colnames(pts) = colnames(x)
-  rbind.data.frame(x,pts)
-}
 
-addMeanPoints = function(x){
-  mX = mean(x[,1])
-  mY = mean(x[,2])
-  pts = data.frame(x = c(mX,mX,mX+1), y = c(mY,mY+1,mY))
-  colnames(pts) = colnames(x)
-  rbind.data.frame(x,pts)
-} 
+
 
 #Build a shape.  The given example is an ellipse ####
 angles = (0:359)
@@ -97,7 +84,8 @@ pcaPlot = dataPlot + theme(legend.position="none") +
       colour = "red"), 
     arrow = arrow())
 pcaPlot
-#Note that the new basis vectors terminate at unit points from the original ellipse
+#Note that the new basis vectors point in the same directions as 
+#vectors from the original origin to the original unit points.
 
 #Grab the "scores" from PCA and plot them ####
 #This is the data reorganized into the new space

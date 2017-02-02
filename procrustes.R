@@ -36,32 +36,53 @@ source("functions.R")
 sampleSize = 1000
 a = rnorm(sampleSize)
 b = rnorm(sampleSize)
-x = a + rnorm(sampleSize,0,.2)
-y = a + b + rnorm(sampleSize,0,.2)
-z = a/2 - b/2 + rnorm(sampleSize,0,.5)
-type = rep("A", times = sampleSize)
-type[a>b] = "B"
-type[y>z] = "C"
-type = factor(type)
-outcome = x + y + z + rnorm(sampleSize,0,.5) + as.numeric(type)
-d1 = data.frame(x = x, y = y, z = z, type = type, outcome = outcome)
+x1 = a + rnorm(sampleSize,0,.2)
+y1 = a + b + rnorm(sampleSize,0,.2)
+z1 = a/2 - b/2 + rnorm(sampleSize,0,.5)
+type1 = rep("A", times = sampleSize)
+type1[a>b] = "B"
+type1[y1>z1] = "C"
+type1 = factor(type1)
+outcome1 = x1 + y1 + z1 + rnorm(sampleSize,0,.5) + as.numeric(type1)
+d1 = data.frame(x = x1, OtherID = rep(letters, 39)[1:1000], y = y1, z = z1, RowID = c(1:1000), type = type1, outcome = outcome1)
 
 # Apply missingness and impute data ####
-missingnessRate = .2 
-imputations = 5
+missingnessRate = .3 
+imputations = 3
+iterations = 3
 missingness = matrix(data = as.logical(rbinom(dim(d1)[1]*dim(d1)[2],1,missingnessRate)), ncol = dim(d1)[2])
+colnames(missingness) = colnames(d1)
+missingness[,c("OtherID","RowID")] = FALSE
 d1.miss = d1
 d1.miss[which(missingness, arr.ind = T)] = NA
-d1.mi = mice(d1.miss, m = imputations, printFlag = F)
+for(i in 1:ncol(d1.miss)){  print(sum(is.na(d1.miss[,i]))) }
+for(i in 1:nrow(d1.miss)){
+  if(sum(is.na(d1.miss[i,c("x","y","z")])) < 3 ) {
+    eliminator = sample(x = c("x","y","z"), size = 1)
+    d1.miss[1,eliminator] = NA
+  }
+}
+
+
+d1.mi = mice(d1.miss, maxit = 0)
+pred = d1.mi$predictorMatrix
+pred[, "RowID"] = 0
+pred[, "OtherID"] = 0
+d1.mi = mice(data = d1.miss, predictorMatrix = pred, m = imputations, maxit = iterations, printFlag = F)
 
 # Run PCA on the imputed data sets and pool the results with GPA ####
-varNums = 1:3 #enter the column numbers to be used in PCA
+varNums = c(1,3,4) #enter the column numbers to be used in PCA
 basis = procPCA(d1.mi, varNums)
 
 
 # Calculate the component scores and insert them into the mids object ####
 d1.mi.aug = addPCAscores(d1.mi, basis)
-
+sum(is.na(complete(d1.mi.aug,"long")))
+d1.mi.longagain = complete(d1.mi.aug, "long", include = T)
+sum(is.na(d1.mi.longagain))
+sum(is.na(d1.miss))
+d1.mi.long = complete(d1.mi, "long", include = F)
+sum(is.na(d1.mi.long))
 # Run the analysis on the new mids object ####
 
 regmodels = with(d1.mi.aug, lm(outcome ~ Comp.1 + Comp.2 + Comp.3 + type))

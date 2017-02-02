@@ -1,13 +1,11 @@
 #PCA Geometry demonstration
 
-#Clear the environment, load libraries and functions ####
-rm(list = ls())
-gc()
+# Load libraries and functions ####
+source("functions.R")
 
-
-
-
-#Build a shape.  The given example is an ellipse ####
+# Build a shape.  ####
+# The given example is an ellipse 
+# In the fPoints.R file, there is code to build the letter F
 angles = (0:359)
 angles = pi*angles/180
 x.coords = 3*cos(angles)
@@ -30,7 +28,7 @@ origPlot = ggplot(data = original, aes(x, y)) +
   geom_point(shape = shaps0, colour = colrsO, size = siz0) + 
   scale_x_continuous(limits = c(-4,4)) + scale_y_continuous(limits = c(-4,4)) +
   theme(legend.position="none")
-origPlot
+origPlot  #Note that the unit points on the X and Y axes are labeled with large red letters
 
 #Transform the shape so that the axes are no longer the best basis ####
 rotAngleDegrees = 30 #enter value in degrees
@@ -46,7 +44,9 @@ transPlot = ggplot(data = transformed, aes(a, b)) +
   geom_point(colour = colrs, shape = shaps, size = siz) + 
   scale_x_continuous(limits = c(-4,4)) + scale_y_continuous(limits = c(-4,4)) +
   theme(legend.position="none")
-transPlot
+transPlot  #The red letters are the transformed image of the original unit points.  
+           #The blue letters are the new unit points.  
+           #The green letters are the unit points based on the center of mass of the plot
 
 #Add a little noise to the plot so PCA has something to do ####
 dataformed = transformed + data.frame(a = runif(nrow(transformed),-.02,.02), b = runif(nrow(transformed),-.02,.02))
@@ -85,12 +85,13 @@ pcaPlot = dataPlot + theme(legend.position="none") +
     arrow = arrow())
 pcaPlot
 #Note that the new basis vectors point in the same directions as 
-#vectors from the original origin to the original unit points.
+#vectors from the original origin (red dot) to the original unit points (red X and Y).
 
 #Grab the "scores" from PCA and plot them ####
 #This is the data reorganized into the new space
 #Also provide the old basis vectors (rows of the loadings matrix)
-newDim = as.data.frame(pcaOutput$scores)
+scoresFromPCA = pcaOutput$scores
+newDim = as.data.frame(scoresFromPCA)
 newDimPlot = ggplot(data = newDim, aes(Comp.1, Comp.2)) + 
   geom_vline(xintercept = 0, linetype = "longdash") + geom_hline(yintercept = 0, linetype = "longdash") +
   geom_point(shape = shaps, colour = colrs, size = siz) + 
@@ -118,4 +119,13 @@ newDimPlot
 
 
 
+# Compare PCA scores from the PCA output to calculated scores using the loading matrix ####
+str(scoresFromPCA)
+dataformed.centered = dataformed #copy the data
+for(i in 1:ncol(dataformed)){ #center each column
+  dataformed.centered[,i] = dataformed.centered[,i] - mean(dataformed.centered[,i])
+}
+colMeans(dataformed.centered) #check the centering
+scoresFromMatrix = as.matrix(dataformed.centered) %*% pcaOutput$loadings[,] #calculate PCA scores
 
+all(scoresFromMatrix == scoresFromPCA) #make sure they are all the same

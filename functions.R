@@ -77,7 +77,7 @@ addPCAscores = function(d1.mi, basis){
   n = nrow(d1.mi.long)/(1 + d1.mi$m) #calculate the n of the original experiment
   scores = matrix(data = NA, nrow = 0, ncol = ncol(basis)) #set up an empty matrix to hold the scores
   for (i in 1:(d1.mi$m + 1)){ #for each data set,
-    raw = d1.mi.long[(1000*(i-1)+1):(1000*i),c("x","y","z")] #extract it from the long form and keep only pca variables
+    raw = d1.mi.long[(n*(i-1)+1):(n*i),rownames(basis)] #extract it from the long form and keep only pca variables
     centered = as.matrix(raw) - matrix(rep(colMeans(raw, na.rm = T), nrow(raw)), byrow = T, ncol = ncol(raw)) #center the variables
     scores = rbind(scores, centered %*% basis) #calculate the scores and append them to the scores matrix
   }
@@ -85,4 +85,7 @@ addPCAscores = function(d1.mi, basis){
   d1.mi.aug = as.mids(d1.mi.long.aug) #convert it back to a mids object
   return(d1.mi.aug)
 }
+
+
+
 
